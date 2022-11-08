@@ -21,7 +21,7 @@ class App:
 
 
     def get_month_from_value(self, month: str) -> str:
-        date_to_date: dict["str": int] = {
+        date_to_date: dict[str: int] = {
             "january": 1,
             "february": 2,
             "march": 3,
