@@ -11,14 +11,18 @@ class App:
     def run(self) -> None:
 
         data: pd.DataFrame = load_data_from_file(FILE)
-        print(data)
+        # print(data)
 
         process: object = DataProcessing(data)
 
+        
+
         integer_month: int = self.get_month_from_value("november")
-
-        process.get_amount_by_month(integer_month)
-
+        # process.names_of_category()
+        # print(process.get_amount_by_month(integer_month, "food"))
+        # d = process.get_annual_expenses("food")
+        # print(d)
+        print(process.average(11))
 
     def get_month_from_value(self, month: str) -> str:
         date_to_date: dict[str: int] = {
