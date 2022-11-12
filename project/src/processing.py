@@ -5,16 +5,13 @@ from calendar import monthrange, isleap
 from datetime import date
 
 
-
-
-
 class DataProcessing:
 
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
 
 
-    def get_amount_by_month(self, month: int, category: str = None) -> float:
+    def get_month_expenses(self, month: int, category: str = None) -> float:
         """
         Parameters:
           int   - month: the month for wich we are looking for expense
@@ -44,19 +41,22 @@ class DataProcessing:
         months_expenses: dict = dict()
         for i in range(1, 13):
             try:
-                months_expenses[i] = self.get_amount_by_month(i, category)
+                months_expenses[i] = self.get_month_expenses(i, category)
             except ValueError as err:
                 print(err)
                 sys.exit(-1)
         
         return months_expenses
 
-    def names_of_category(self) -> set[str]:
+    def names_of_category(self, month: int = None) -> set[str]:
         """
         Return:
           set[str]: set of names category in self.data
         """
-        return set(self.data[DataInfo.CATEGORY])
+        if not month:
+          return set(self.data[DataInfo.CATEGORY])
+        month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
+        return set(month_df[DataInfo.CATEGORY])
     
 
     def average(self, month: int = None, category: str = "food") -> float:
@@ -66,8 +66,7 @@ class DataProcessing:
           str   - category: category to find average of expenses
         Return:
           float: average of expenses for month or year
-        """
-        
+        """   
         if not month:
             annual_exp: float = sum(self.get_annual_expenses(category).values())
             if isleap(date.today().year):
@@ -76,3 +75,21 @@ class DataProcessing:
         month_exp: float = self.get_amount_by_month(month, category)
         return month_exp / monthrange(date.today().year, month)[1]
         
+    
+    def get_month_category_value(self, month: int) -> dict[str, float]:
+        """
+        Parameter:
+          int   - month: month for which we're looking for a expenses by category
+        Return:
+          list: list of dict with key = category, value = sum of expenses in the given month
+        """
+        
+        month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
+        returned_dict: dict = dict()
+        category_set: set = self.names_of_category(month=month)
+
+        for category in category_set:
+            category_expenses: float = self.get_month_expenses(month, category=category)
+            returned_dict[category] = category_expenses
+            
+        return returned_dict
