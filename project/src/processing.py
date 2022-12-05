@@ -2,6 +2,7 @@ import pandas as pd
 from  .reader import DataInfo
 import sys
 from calendar import monthrange, isleap
+import calendar
 from datetime import date
 
 
@@ -39,9 +40,10 @@ class DataProcessing:
           dict[str: float]: dict[month: sum of expenses]
         """
         months_expenses: dict = dict()
-        for i in range(1, 13):
+        for i in range(0, 12):
             try:
-                months_expenses[i] = self.get_month_expenses(i, category)
+                month: str = int_to_str_month(i)
+                months_expenses[month] = self.get_month_expenses(i, category)
             except ValueError as err:
                 print(err)
                 sys.exit(-1)
@@ -93,3 +95,14 @@ class DataProcessing:
             returned_dict[category] = category_expenses
             
         return returned_dict
+
+
+
+def int_to_str_month(month: int) -> str:
+    months_list: list = list(calendar.month_name[1:])
+    try:
+        returned_month: str = months_list[month].lower()
+    except KeyError as err:
+        print(f"There is not a month given by value of {month}")
+        sys.exit(-1)
+    return returned_month
