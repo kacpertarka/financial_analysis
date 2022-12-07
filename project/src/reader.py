@@ -1,9 +1,9 @@
 import pandas as pd
 from datetime import datetime
 
-class DataInfo:
 
-    CATEGORY: str = "category"
+class DataInfo:
+    CATEGORY = "category"
     AMOUNT: str = "amount"
     DATE: str = "date"
     YEAR: str = "year"
@@ -11,11 +11,10 @@ class DataInfo:
     DAY: str = "day"
 
 
-
 def load_data_from_file(file_path: str) -> pd.DataFrame:
 
-    data = pd.read_csv(file_path, 
-                        sep=";", 
+    data = pd.read_csv(file_path,
+                        sep=";",
                         dtype={
                             DataInfo.AMOUNT: float,
                             DataInfo.CATEGORY: str,

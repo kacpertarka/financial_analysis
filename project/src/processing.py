@@ -1,5 +1,5 @@
 import pandas as pd
-from  .reader import DataInfo
+from .reader import DataInfo
 import sys
 from calendar import monthrange, isleap
 import calendar
@@ -11,11 +11,10 @@ class DataProcessing:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
 
-
     def get_month_expenses(self, month: int, category: str = None) -> float:
         """
         Parameters:
-          int   - month: the month for wich we are looking for expense
+          int   - month: the month for witch we are looking for expense
           str   - category: category we are looking for expenses
         Return:
           float:  sum of expenses in the given month
@@ -31,8 +30,7 @@ class DataProcessing:
         category_value = month_value[category_mask]
         return sum(category_value[DataInfo.AMOUNT])
 
-
-    def get_annual_expenses(self, category: str) -> dict[str: float]:
+    def get_annual_expenses(self, category: str = None) :
         """
         Parameters:
           str   - category: category we are looking for expenses
@@ -47,19 +45,17 @@ class DataProcessing:
             except ValueError as err:
                 print(err)
                 sys.exit(-1)
-        
         return months_expenses
 
-    def names_of_category(self, month: int = None) -> set[str]:
+    def names_of_category(self, month: int = None) -> list[str]:
         """
         Return:
           set[str]: set of names category in self.data
         """
         if not month:
-          return set(self.data[DataInfo.CATEGORY])
+          return list(self.data[DataInfo.CATEGORY])
         month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
-        return set(month_df[DataInfo.CATEGORY])
-    
+        return list(month_df[DataInfo.CATEGORY])
 
     def average(self, month: int = None, category: str = "food") -> float:
         """
@@ -95,7 +91,6 @@ class DataProcessing:
             returned_dict[category] = category_expenses
             
         return returned_dict
-
 
 
 def int_to_str_month(month: int) -> str:
