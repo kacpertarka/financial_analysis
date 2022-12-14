@@ -5,19 +5,13 @@ import plotly.express as px
 from datetime import datetime
 from dash import Dash, html, dcc
 from dash.dependencies import Input, Output, State
-from typing import Any
-from src.reader import load_data_from_file, DataInfo
-from src.processing import DataProcessing
-
+from src.reader import load_data_from_file, DataInfo, add_data_to_file
+from src.processing import DataProcessing, CATEGORY_LIST
 
 FILE: str = "data/test.csv"
 
-#
-# class App:
-#     def run(self) -> None:
-#         pass
-#
-#     def get_month_from_value(self, month: str) -> int:
+
+#     def get_month_from_value(month: str) -> int:
 #         date_to_date: dict[str: int] = {
 #             "january": 1,
 #             "february": 2,
@@ -32,13 +26,6 @@ FILE: str = "data/test.csv"
 #             "november": 11,
 #             "december": 12
 #         }
-#
-#         try:
-#             returned_month: int = date_to_date[month]
-#         except KeyError as err:
-#             print(f"There is not a month named {month}")
-#             sys.exit(-1)
-#         return returned_month
 
 
 app = Dash(__name__)
@@ -46,20 +33,16 @@ app = Dash(__name__)
 
 def main() -> None:
 
-    df = load_data_from_file(FILE)
+    df: pd.DataFrame = load_data_from_file(FILE)
     data = DataProcessing(df)
-    x: dict[str: float] = data.get_annual_expenses()
-    fig = px.bar(df, x="date", y="amount", color="category")
-    chart = px.pie(values=x.values(), names=x.keys())
-    print(data.names_of_category())
-    category_list = data.names_of_category()
-    df2 = pd.DataFrame({
-        "Car": ["Mercedes", "Jaguar", "Ford"],
-        "Amount": [1, 1, 1],
-        "Country": ["Germany", "GB", "USA"]
-    })
-    fig2 = px.bar(df2, x="Car", y="Amount", color="Country", barmode="group")
+    category_list = CATEGORY_LIST
+    # current_month_expenses = data.get_month_category_value(current_month)
+    # fig = px.bar(df, x="date", y="amount", color="category")
+    # chart = px.pie(values=annual_expenses.values(), names=annual_expenses.keys())
 
+    # curren_month =
+
+    # monthly_expenses_fig = px.bar(x=current_month_expenses.keys(), y=current_month_expenses.values(), barmode="group")
     app.layout = html.Div(children=[
         html.H1(children='Hello Dash'),
 
@@ -81,56 +64,79 @@ def main() -> None:
             html.Button(
                 id="btn", n_clicks=0, type="submit", children="Submit"
             ),
-            html.Div(id="out"),
-        ]),
+            html.Div(id="out")
+        ]
+        ),
 
         html.Div(children=[
+            # dcc.Graph(
+            #     id='annual-expenses-chart',
+            #     figure=chart,
+            #     style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
+            # ),
             dcc.Graph(
-                id='example-graph',
-                figure=chart,
-                style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
-            ),
-            dcc.Graph(
-                id='fig',
+                id='monthly-expenses-bar',
                 figure={},  # fig2
                 style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
             ),
-            dcc.Graph(
-                id='year-graph',
-                figure=fig,
-                style={'width': '100%', 'height': '50vh'}
-            )
+            # dcc.Graph(
+            #     id='daily-expenses-graph',
+            #     figure={},
+            #     style={'width': '100%', 'height': '50vh'}
+            # )
         ]),
 
     ])
 
     @app.callback(
         [
-            Output(component_id="fig", component_property="figure"),
+            Output(component_id="monthly-expenses-bar", component_property="figure"),
             Output(component_id="input", component_property="value"),
             Output(component_id="category", component_property="value")
         ],
         Input(component_id="btn", component_property="n_clicks"),
         [
-            State(component_id="category", component_property="options"),
+            State(component_id="category", component_property="value"),
             State(component_id="input", component_property="value")
         ]
     )
-    def get_value(click: int, category: str, input_value: str):
+    def get_value(_: int, category: str, input_value: str) -> tuple:
+        current_month = datetime.today().month
+        filtered_data: dict[str, float] = data.get_month_category_value(current_month)
+        monthly_expenses_fig = px.bar(x=filtered_data.keys(), y=filtered_data.values(), barmode="group")
         if input_value != "":
-            # print(input_value)
-            print(category)
-            dff = df2.copy()
             try:
-                dff.loc[0, "Amount"] = float(input_value)
+                amount = int(input_value)
             except ValueError:
-                return dash.no_update, "", ""
-            fig3 = px.bar(dff, x="Car", y="Amount", color="Country", barmode="group")
-            return fig3, "", ""
-        else:
-            return fig2, "", ""
+                return monthly_expenses_fig, "", ""
+            current_date = datetime.today().strftime("%Y-%m-%d")
+            adding_value = {
+                DataInfo.DATE: [current_date],
+                DataInfo.AMOUNT: [amount],
+                DataInfo.CATEGORY: [category],
+                DataInfo.YEAR: [datetime.today().year],
+                DataInfo.MONTH: [current_month],
+                DataInfo.DAY: [datetime.today().day]
+            }
+            add_data_to_file(FILE, adding_value, df)
+            new_df = concat(adding_value, df)
+            print(df)
+            print(new_df)
+            new_data = DataProcessing(new_df)
+            filtered_data: dict[str, float] = new_data.get_month_category_value(current_month)
+            monthly_expenses_fig = px.bar(x=filtered_data.keys(), y=filtered_data.values(), barmode="group")
+            return monthly_expenses_fig, "", ""
+        return monthly_expenses_fig, "", ""
 
     app.run_server(debug=True)
+
+
+def concat(new_val: dict, old_val: pd.DataFrame) -> pd.DataFrame:
+    """Concat dictionary to DataFrame & cut"""
+    new_df = pd.DataFrame.from_dict(data=new_val)
+    new_df = pd.concat([new_df, old_val], axis=0, ignore_index=True)
+    new_df.astype({DataInfo.YEAR: 'int', DataInfo.MONTH: 'int', DataInfo.DAY: 'int'})
+    return new_df
 
 
 if __name__ == '__main__':

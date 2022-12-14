@@ -3,7 +3,9 @@ from .reader import DataInfo
 import sys
 from calendar import monthrange, isleap
 import calendar
-from datetime import date
+from datetime import date, timedelta
+
+CATEGORY_LIST: list[str] = ["home", "food", "drink", "entertainment", "auto", "medical"]
 
 
 class DataProcessing:
@@ -16,7 +18,7 @@ class DataProcessing:
         Parameters:
           int   - month: the month for witch we are looking for expense
           str   - category: category we are looking for expenses
-        Return:
+        Returns:
           float:  sum of expenses in the given month
         """
         month_value: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
@@ -30,11 +32,26 @@ class DataProcessing:
         category_value = month_value[category_mask]
         return sum(category_value[DataInfo.AMOUNT])
 
-    def get_annual_expenses(self, category: str = None) :
+    def daily_expenses(self):
+        """
+        Returns:
+          dict: key - day, value - daily expenses
+        """
+        returned_dict = {}
+        current_year = date.today().year
+        current_month = date.today().month
+        current_day = date.today().day
+
+        start_date = date(year=current_year, month=1, day=1)
+        end_date = date(year=current_year, month=current_month, day=current_day)
+        # TODO petla po dniach i wartosci dladanego dnia
+
+
+    def get_annual_expenses(self, category: str = None) -> dict[str, float]:
         """
         Parameters:
           str   - category: category we are looking for expenses
-        Return:
+        Returns:
           dict[str: float]: dict[month: sum of expenses]
         """
         months_expenses: dict = dict()
@@ -47,22 +64,19 @@ class DataProcessing:
                 sys.exit(-1)
         return months_expenses
 
-    def names_of_category(self, month: int = None) -> list[str]:
+    def names_of_category(self) -> list[str]:
         """
-        Return:
+        Returns:
           set[str]: set of names category in self.data
         """
-        if not month:
-          return list(self.data[DataInfo.CATEGORY])
-        month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
-        return list(month_df[DataInfo.CATEGORY])
+        return self.data[DataInfo.CATEGORY].unique()
 
     def average(self, month: int = None, category: str = "food") -> float:
         """
         Parameters:
           int   - month: month to find average of expense, if None - return average for whole year
           str   - category: category to find average of expenses
-        Return:
+        Returns:
           float: average of expenses for month or year
         """   
         if not month:
@@ -72,21 +86,19 @@ class DataProcessing:
             return annual_exp / 365
         month_exp: float = self.get_amount_by_month(month, category)
         return month_exp / monthrange(date.today().year, month)[1]
-        
-    
+
     def get_month_category_value(self, month: int) -> dict[str, float]:
         """
         Parameter:
           int   - month: month for which we're looking for a expenses by category
-        Return:
-          list: list of dict with key = category, value = sum of expenses in the given month
+        Returns:
+          dict: dict with key = category, value = sum of expenses in the given month
         """
-        
-        month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
+        # month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
+        # print(month_df)
         returned_dict: dict = dict()
-        category_set: set = self.names_of_category(month=month)
 
-        for category in category_set:
+        for category in CATEGORY_LIST:
             category_expenses: float = self.get_month_expenses(month, category=category)
             returned_dict[category] = category_expenses
             
