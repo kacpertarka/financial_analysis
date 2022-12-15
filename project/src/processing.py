@@ -32,7 +32,7 @@ class DataProcessing:
         category_value = month_value[category_mask]
         return sum(category_value[DataInfo.AMOUNT])
 
-    def daily_expenses(self):
+    def daily_expenses(self) -> dict[date, float]:
         """
         Returns:
           dict: key - day, value - daily expenses
@@ -44,8 +44,14 @@ class DataProcessing:
 
         start_date = date(year=current_year, month=1, day=1)
         end_date = date(year=current_year, month=current_month, day=current_day)
-        # TODO petla po dniach i wartosci dladanego dnia
+        delta = timedelta(days=1)
 
+        while start_date <= end_date:
+            daily_expenses = self.data.loc[self.data[DataInfo.DATE] == start_date, DataInfo.AMOUNT].sum()
+            returned_dict[start_date] = daily_expenses
+            start_date += delta
+
+        return returned_dict
 
     def get_annual_expenses(self, category: str = None) -> dict[str, float]:
         """
