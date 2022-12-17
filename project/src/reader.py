@@ -1,5 +1,4 @@
 import pandas as pd
-# from datetime import datetime
 
 
 class DataInfo:
@@ -33,5 +32,4 @@ def add_data_to_file(file_path: str, data: dict, old_data: pd.DataFrame) -> None
     df = pd.DataFrame.from_dict(data=data)
     new_value = pd.concat([df, old_data], axis=0, ignore_index=True)
     new_value = new_value.loc[:, [DataInfo.DATE, DataInfo.AMOUNT, DataInfo.CATEGORY]]
-    # print(new_value.loc[:, [DataInfo.DATE, DataInfo.AMOUNT, DataInfo.CATEGORY]])
     new_value.to_csv(file_path, index=False, header=True, sep=";")

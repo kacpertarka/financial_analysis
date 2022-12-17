@@ -1,3 +1,4 @@
+from typing import Optional
 import pandas as pd
 from .reader import DataInfo
 import sys
@@ -13,7 +14,20 @@ class DataProcessing:
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
 
-    def get_month_expenses(self, month: int, category: str = None) -> float:
+    def annual_expenses(self) -> dict[str, float]:
+        """
+        Returns:
+          dict: key - category name, values - sum of expenses for these category
+        """
+        returned_dict = {}
+        for category in self.names_of_category():
+            returned_dict[category] = self.data.loc[self.data[DataInfo.CATEGORY] == category, DataInfo.AMOUNT].sum()
+
+        for k, v in returned_dict.items():
+            print(k, " - ", v)
+        return returned_dict
+
+    def get_month_expenses(self, month: int, category: Optional[str] = None) -> float:
         """
         Parameters:
           int   - month: the month for witch we are looking for expense
@@ -53,7 +67,7 @@ class DataProcessing:
 
         return returned_dict
 
-    def get_annual_expenses(self, category: str = None) -> dict[str, float]:
+    def get_annual_expenses(self, category: Optional[str] = None) -> dict[str, float]:
         """
         Parameters:
           str   - category: category we are looking for expenses
@@ -77,7 +91,7 @@ class DataProcessing:
         """
         return self.data[DataInfo.CATEGORY].unique()
 
-    def average(self, month: int = None, category: str = "food") -> float:
+    def average(self, month: Optional[int] = None, category: str = "food") -> float:
         """
         Parameters:
           int   - month: month to find average of expense, if None - return average for whole year
@@ -100,8 +114,6 @@ class DataProcessing:
         Returns:
           dict: dict with key = category, value = sum of expenses in the given month
         """
-        # month_df: pd.DataFrame = self.data[self.data[DataInfo.MONTH] == month]
-        # print(month_df)
         returned_dict: dict = dict()
 
         for category in CATEGORY_LIST:

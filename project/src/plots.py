@@ -1,29 +1,26 @@
-import matplotlib.pyplot as plt
-
-FIG_X = 10
-FIG_Y = 5
-COLOR_LIST = ['black', 'blue', 'gold' , 'green', 'orange', 'red', 'white', 'yellow']
+import plotly.express as px
+from datetime import date
+colors = ['gold', 'mediumturquoise', 'darkorange', 'lightgreen']
 
 
+def pie_plot(data: dict[str, float]) -> px.pie:
+    """Generate pie plot """
+    # TODO try use plotly.graph_objects.Pie instead of px.pie
 
-def bar_plot(elements: dict, title: str = None, 
-            x_label: str = None, y_label: str = None,
-            color: str = 'blue') -> None:
+    pie = px.pie(values=data.values(), names=data.keys())
 
-    x_elements: list = list(elements.keys())
-    y_elements: list = list(elements.values())
-    bar_color = color if color in COLOR_LIST else 'blue'
-
-    fig = plt.figure(figsize = (FIG_X, FIG_Y))
-    plt.bar(x_elements, y_elements, color=bar_color)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    plt.title(title)
-
-    plt.show()
-
-    print(type(x_elements))
-    print(type(y_elements))
+    return pie
 
 
-   
+def daily_bar(data: dict[date, float]) -> px.bar:
+    """Generate bar plot for daily expenses"""
+
+    plot = px.bar(x=data.keys(), y=data.values(), barmode="group")
+    return plot
+
+
+def monthly_bar(data: dict[str, float]) -> px.bar:
+    """Generate bar plot for monthly expenses"""
+
+    plot = px.bar(x=data.keys(), y=data.values(), barmode="group")
+    return plot

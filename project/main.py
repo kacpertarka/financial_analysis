@@ -1,5 +1,3 @@
-import sys
-import dash.exceptions
 import pandas as pd
 import plotly.express as px
 from datetime import datetime
@@ -7,10 +5,13 @@ from dash import Dash, html, dcc
 from dash.dependencies import Input, Output, State
 from src.reader import load_data_from_file, DataInfo, add_data_to_file
 from src.processing import DataProcessing, CATEGORY_LIST
+from src.plots import pie_plot, monthly_bar, daily_bar
+from datetime import date
+
 
 FILE: str = "data/test.csv"
 
-
+#
 #     def get_month_from_value(month: str) -> int:
 #         date_to_date: dict[str: int] = {
 #             "january": 1,
@@ -36,13 +37,8 @@ def main() -> None:
     df: pd.DataFrame = load_data_from_file(FILE)
     data = DataProcessing(df)
     category_list = CATEGORY_LIST
-    # current_month_expenses = data.get_month_category_value(current_month)
-    # fig = px.bar(df, x="date", y="amount", color="category")
-    # chart = px.pie(values=annual_expenses.values(), names=annual_expenses.keys())
+    current_month = datetime.today().month
 
-    # curren_month =
-
-    # monthly_expenses_fig = px.bar(x=current_month_expenses.keys(), y=current_month_expenses.values(), barmode="group")
     app.layout = html.Div(children=[
         html.H1(children='Hello Dash'),
 
@@ -69,30 +65,32 @@ def main() -> None:
         ),
 
         html.Div(children=[
-            # dcc.Graph(
-            #     id='annual-expenses-chart',
-            #     figure=chart,
-            #     style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
-            # ),
+            html.H4("Annual expenses by category"),
+            dcc.Graph(
+                id='annual-expenses-chart',
+                figure={},
+                style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
+            ),
             dcc.Graph(
                 id='monthly-expenses-bar',
                 figure={},  # fig2
                 style={'display': 'inline-block', 'width': '50%', 'height': '60vh'}
             ),
-            # dcc.Graph(
-            #     id='daily-expenses-graph',
-            #     figure={},
-            #     style={'width': '100%', 'height': '50vh'}
-            # )
+            dcc.Graph(
+                id='daily-expenses-graph',
+                figure={},
+                style={'width': '100%', 'height': '50vh'}
+            )
         ]),
-
     ])
 
     @app.callback(
         [
             Output(component_id="monthly-expenses-bar", component_property="figure"),
+            Output(component_id="daily-expenses-graph", component_property="figure"),
+            Output(component_id="annual-expenses-chart", component_property="figure"),
             Output(component_id="input", component_property="value"),
-            Output(component_id="category", component_property="value")
+            Output(component_id="category", component_property="value"),
         ],
         Input(component_id="btn", component_property="n_clicks"),
         [
@@ -101,14 +99,20 @@ def main() -> None:
         ]
     )
     def get_value(_: int, category: str, input_value: str) -> tuple:
-        current_month = datetime.today().month
-        filtered_data: dict[str, float] = data.get_month_category_value(current_month)
-        monthly_expenses_fig = px.bar(x=filtered_data.keys(), y=filtered_data.values(), barmode="group")
-        if input_value != "":
+        """Get value from input and return plots"""
+        # get data for plots
+        monthly_expenses: dict[str, float] = data.get_month_category_value(current_month)
+        daily_expenses: dict[date, float] = data.daily_expenses()
+        annual_expenses: dict[str, float] = data.annual_expenses()
+        # generate plots
+        monthly_expenses_fig = monthly_bar(monthly_expenses)
+        daily_expenses_fig = daily_bar(daily_expenses)
+        chart_pic = pie_plot(annual_expenses)
+        if input_value != "" and input_value is not None:
             try:
-                amount = int(input_value)
+                amount = round(float(input_value.replace(",", ".")), 2)
             except ValueError:
-                return monthly_expenses_fig, "", ""
+                return monthly_expenses_fig, daily_expenses_fig, "", ""
             current_date = datetime.today().strftime("%Y-%m-%d")
             adding_value = {
                 DataInfo.DATE: [current_date],
@@ -119,24 +123,21 @@ def main() -> None:
                 DataInfo.DAY: [datetime.today().day]
             }
             add_data_to_file(FILE, adding_value, df)
-            new_df = concat(adding_value, df)
-            print(df)
-            print(new_df)
+            new_df = load_data_from_file(FILE)
             new_data = DataProcessing(new_df)
-            filtered_data: dict[str, float] = new_data.get_month_category_value(current_month)
-            monthly_expenses_fig = px.bar(x=filtered_data.keys(), y=filtered_data.values(), barmode="group")
-            return monthly_expenses_fig, "", ""
-        return monthly_expenses_fig, "", ""
+            # get data for plots
+            monthly_expenses: dict[str, float] = new_data.get_month_category_value(current_month)
+            daily_expenses: dict[date, float] = new_data.daily_expenses()
+            annual_expenses: dict[str, float] = new_data.annual_expenses()
+            # generate plots
+            monthly_expenses_fig = monthly_bar(monthly_expenses)
+            daily_expenses_fig = daily_bar(daily_expenses)
+            chart_pic = pie_plot(annual_expenses)
+            return monthly_expenses_fig, daily_expenses_fig, chart_pic, "", ""
+        else:
+            return monthly_expenses_fig, daily_expenses_fig, chart_pic, "", ""
 
     app.run_server(debug=True)
-
-
-def concat(new_val: dict, old_val: pd.DataFrame) -> pd.DataFrame:
-    """Concat dictionary to DataFrame & cut"""
-    new_df = pd.DataFrame.from_dict(data=new_val)
-    new_df = pd.concat([new_df, old_val], axis=0, ignore_index=True)
-    new_df.astype({DataInfo.YEAR: 'int', DataInfo.MONTH: 'int', DataInfo.DAY: 'int'})
-    return new_df
 
 
 if __name__ == '__main__':
